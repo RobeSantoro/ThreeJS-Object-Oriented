@@ -64,12 +64,12 @@ class BasicWorldDemo {
     // Add the Skybox Texture
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
-      './resources/textures/posx.jpg',
-      './resources/textures/negx.jpg',
-      './resources/textures/posy.jpg',
-      './resources/textures/negy.jpg',
-      './resources/textures/posz.jpg',
-      './resources/textures/negz.jpg'      
+      './resources/textures/env/posx.jpg',
+      './resources/textures/env/negx.jpg',
+      './resources/textures/env/posy.jpg',
+      './resources/textures/env/negy.jpg',
+      './resources/textures/env/posz.jpg',
+      './resources/textures/env/negz.jpg'      
     ]);
     this._scene.background = texture;
 
@@ -78,16 +78,33 @@ class BasicWorldDemo {
   }
 
   _LoadModel() {
+    
+    const DiffuseTexture = new THREE.TextureLoader()
+    .load('./resources/textures/Avatar_Diffuse.jpg', (texture) => {
+      texture.encoding = THREE.sRGBEncoding;
+      texture.needsUpdate = true;
+      texture.flipY = false;
+    });
+
+    const NormalTexture = new THREE.TextureLoader()
+    .load('./resources/textures/Avatar_Normal.jpg', (texture) => {
+      texture.needsUpdate = true;
+      texture.flipY = false;
+
+    });
+
     const loader = new GLTFLoader();
     loader.load('./resources/models/Avatar.glb', (gltf) => {
-      console.log(gltf);
-
+      
       const model = gltf.scene;
 
       // Cast shadows
       model.traverse((child) => {
         if (child.isMesh) {
+        
           child.castShadow = true;
+          child.material.map = DiffuseTexture;
+          child.material.normalMap = NormalTexture;
         }
       });
       // Scale the model
@@ -111,6 +128,7 @@ class BasicWorldDemo {
     })
   }
 }
+
 
 let _APP = null;
 
