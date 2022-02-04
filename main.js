@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-class BasicWorldDemo {
+class World {
   constructor() {
     this._Initialize();
   }
@@ -27,38 +27,42 @@ class BasicWorldDemo {
     //Set the camera
     const fov = 75;
     const aspect = window.innerWidth / window.innerHeight;
-    const near = 1.0;
-    const far = 1000.0;
+    const near = 0.01;
+    const far = 100.0;
     this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    this._camera.position.set(75, 20, 10);
+    this._camera.position.set(0, 1, 2);
 
     // Create the scene
     this._scene = new THREE.Scene();
     
     // Add a directional light
-    let light = new THREE.DirectionalLight(0xffffff, 1.0);
-    light.position.set(100, 100, 100);
-    light.target.position.set(0, 0, 0);
-    light.castShadow = true;
-    light.shadow.bias = -0.01;
-    //light.shadow.mapsize.width = 2048;
-    //light.shadow.mapsize.height = 2048;
-    light.shadow.camera.near = 1.0;
-    light.shadow.camera.far = 500.0;
-    light.shadow.camera.left = 200;
-    light.shadow.camera.right = -200;
-    light.shadow.camera.top = 200;
-    light.shadow.camera.bottom = -200;
-    this._scene.add(light);
+    let DirectionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    DirectionalLight.position.set(2, 3, 2);
+    DirectionalLight.target.position.set(0, 0, 0);
+    DirectionalLight.castShadow = true;    
+    DirectionalLight.shadow.mapsize = new THREE.Vector2(2048, 2048);
+    DirectionalLight.shadow.camera.near = 0.01;
+    DirectionalLight.shadow.camera.far = 10.0;
+    const shadowSize = 1.5;
+    DirectionalLight.shadow.camera.left = shadowSize;
+    DirectionalLight.shadow.camera.right = -shadowSize;
+    DirectionalLight.shadow.camera.top = shadowSize;
+    DirectionalLight.shadow.camera.bottom = -shadowSize;
 
+    this._scene.add(DirectionalLight);
+
+    // Add Light helper
+    const helper = new THREE.DirectionalLightHelper(DirectionalLight, 1);
+    this._scene.add(helper);
+  
     // Add an ambient light    
-    light = new THREE.AmbientLight(0xffffff, 0.5);
-    this._scene.add(light);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this._scene.add(ambientLight);
 
     // Add the OrbitControls
     const controls = new OrbitControls(this._camera, this._threejs.domElement);
     controls.enableDamping = true;
-    controls.target.set(0, 10, 0);
+    controls.target.set(0, 1, 0);
     controls.update();
 
     // Add the Skybox Texture
@@ -72,6 +76,20 @@ class BasicWorldDemo {
       './resources/textures/env/negz.jpg'      
     ]);
     this._scene.background = texture;
+
+    // Add ground plane
+    const planeGeometry = new THREE.PlaneGeometry(100 , 100, 1, 1);
+    const planeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x555555,
+      roughness: 1.0,
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+      wireframe: false,
+    });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.receiveShadow = true;
+    this._scene.add(plane);
 
     this._LoadModel();
     this._RAF();
@@ -105,10 +123,10 @@ class BasicWorldDemo {
           child.castShadow = true;
           child.material.map = DiffuseTexture;
           child.material.normalMap = NormalTexture;
+          child.material.envMap = this._scene.background;
+          child.material.needsUpdate = true;
         }
       });
-      // Scale the model
-      model.scale.set(10, 10, 10);
 
       // Add the model to the scene
       this._scene.add(gltf.scene);
@@ -133,5 +151,5 @@ class BasicWorldDemo {
 let _APP = null;
 
 window.addEventListener('DOMContentLoaded', () => {
-  _APP = new BasicWorldDemo();
+  _APP = new World();
 });
