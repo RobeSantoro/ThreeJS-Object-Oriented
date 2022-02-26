@@ -60,10 +60,10 @@ class World {
     this._scene.add(ambientLight);
 
     // Add the OrbitControls
-    const controls = new OrbitControls(this._camera, this._threejs.domElement);
-    controls.enableDamping = true;
-    controls.target.set(0, 1, 0);
-    controls.update();
+    this._controls = new OrbitControls(this._camera, this._threejs.domElement);
+    this._controls.enableDamping = true;
+    this._controls.target.set(0, 1, 0);
+    this._controls.update();
 
     // Add the Skybox Texture
     const loader = new THREE.CubeTextureLoader();
@@ -142,6 +142,7 @@ class World {
   _RAF() {
     requestAnimationFrame(() => {
       this._threejs.render(this._scene, this._camera);
+      this._controls.update();
       this._RAF();
     })
   }
