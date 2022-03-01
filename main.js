@@ -4,24 +4,22 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 class World {
   constructor() {
-    this._Initialize();
+    this.init();
   }
 
-  _Initialize() {
-    this._threejs = new THREE.WebGLRenderer({
-      antialias: true,
-    });
-    this._threejs.outputEncoding = THREE.sRGBEncoding;
-    this._threejs.shadowMap.enabled = true;
-    this._threejs.shadowMap.type = THREE.PCFSoftShadowMap;
-    this._threejs.setPixelRatio(window.devicePixelRatio);
-    this._threejs.setSize(window.innerWidth, window.innerHeight);
+  init() {
+    this.webgl = new THREE.WebGLRenderer({ antialias: true});
+    this.webgl.outputEncoding = THREE.sRGBEncoding;
+    this.webgl.shadowMap.enabled = true;
+    this.webgl.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.webgl.setPixelRatio(window.devicePixelRatio);
+    this.webgl.setSize(window.innerWidth, window.innerHeight);
 
-    document.body.appendChild(this._threejs.domElement);
+    document.body.appendChild(this.webgl.domElement);
 
     //Add the resize event listener
     window.addEventListener('resize', () => {
-      this._OnWindowResize();
+      this.onWindowResize();
     }, false);
     
     //Set the camera
@@ -29,11 +27,11 @@ class World {
     const aspect = window.innerWidth / window.innerHeight;
     const near = 0.01;
     const far = 100.0;
-    this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    this._camera.position.set(0, 1, 2);
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    this.camera.position.set(0, 1, 2);
 
     // Create the scene
-    this._scene = new THREE.Scene();
+    this.scene = new THREE.Scene();
     
     // Add a directional light
     let DirectionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -49,25 +47,25 @@ class World {
     DirectionalLight.shadow.camera.top = shadowSize;
     DirectionalLight.shadow.camera.bottom = -shadowSize;
 
-    this._scene.add(DirectionalLight);
+    this.scene.add(DirectionalLight);
 
     // Add Light helper
     const helper = new THREE.DirectionalLightHelper(DirectionalLight, 1);
-    this._scene.add(helper);
+    this.scene.add(helper);
   
     // Add an ambient light    
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this._scene.add(ambientLight);
+    this.scene.add(ambientLight);
 
     // Add the OrbitControls
-    this._controls = new OrbitControls(this._camera, this._threejs.domElement);
-    this._controls.enableDamping = true;
-    this._controls.target.set(0, 1, 0);
-    this._controls.update();
+    this.orbitControls = new OrbitControls(this.camera, this.webgl.domElement);
+    this.orbitControls.enableDamping = true;
+    this.orbitControls.target.set(0, 1, 0);
+    this.orbitControls.update();
 
     // Add the Skybox Texture
     const loader = new THREE.CubeTextureLoader();
-    const texture = loader.load([
+    const envTexture = loader.load([
       './resources/textures/env/posx.jpg',
       './resources/textures/env/negx.jpg',
       './resources/textures/env/posy.jpg',
@@ -75,27 +73,26 @@ class World {
       './resources/textures/env/posz.jpg',
       './resources/textures/env/negz.jpg'      
     ]);
-    this._scene.background = texture;
+    this.scene.background = envTexture;
 
     // Add ground plane
     const planeGeometry = new THREE.PlaneGeometry(100 , 100, 1, 1);
     const planeMaterial = new THREE.MeshStandardMaterial({
       color: 0x555555,
-      roughness: 1.0,
+      roughness: 0.0,
       metalness: 0.0,
-      side: THREE.DoubleSide,
-      wireframe: false,
+      envMap: envTexture,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.rotation.x = -Math.PI / 2;
     plane.receiveShadow = true;
-    this._scene.add(plane);
+    this.scene.add(plane);
 
-    this._LoadModel();
-    this._RAF();
+    this.loadModel();
+    this.animate();
   }
 
-  _LoadModel() {
+  loadModel() {
     
     const DiffuseTexture = new THREE.TextureLoader()
     .load('./resources/textures/Avatar_Diffuse.jpg', (texture) => {
@@ -107,8 +104,7 @@ class World {
     const NormalTexture = new THREE.TextureLoader()
     .load('./resources/textures/Avatar_Normal.jpg', (texture) => {
       texture.needsUpdate = true;
-      texture.flipY = false;
-
+      texture.flipY = false;      
     });
 
     const loader = new GLTFLoader();
@@ -123,34 +119,35 @@ class World {
           child.castShadow = true;
           child.material.map = DiffuseTexture;
           child.material.normalMap = NormalTexture;
-          child.material.envMap = this._scene.background;
+          child.material.envMap = this.scene.background;
           child.material.needsUpdate = true;
         }
       });
 
       // Add the model to the scene
-      this._scene.add(gltf.scene);
+      this.scene.add(gltf.scene);
     });
   }
 
-  _OnWindowResize() {
-    this._camera.aspect = window.innerWidth / window.innerHeight;
-    this._camera.updateProjectionMatrix();
-    this._threejs.setSize(window.innerWidth, window.innerHeight);
+  onWindowResize() {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.webgl.setSize(window.innerWidth, window.innerHeight);
   }
 
-  _RAF() {
+  animate() {
     requestAnimationFrame(() => {
-      this._threejs.render(this._scene, this._camera);
-      this._controls.update();
-      this._RAF();
+      this.webgl.render(this.scene, this.camera);
+      this.orbitControls.update();
+      this.animate();
     })
   }
 }
 
 
-let _APP = null;
+let APP = null;
 
 window.addEventListener('DOMContentLoaded', () => {
-  _APP = new World();
+  APP = new World();
+  console.log(APP);
 });
